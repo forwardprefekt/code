@@ -1,7 +1,7 @@
 ## Quick python script to extract cert data from a signed pefile, and fixup headers and attach to another. 
 ## Gives the impression of a signed executable. 
 ## Most analysts will just check if an executable is signed, in the case they check to see if it is signed, they will notice that it doesnt validate. If an expired cert is attached, then most analysts will assume that is why it didnt validate. The windows gui is sort of terrible for this, and doesnt make it immediately obvious that payload itself failed a cryptographic check. 
-## Oblicagory XKCD: https://xkcd.com/1181/
+## Obligagory XKCD: https://xkcd.com/1181/
 ## check at grifsec.com/crypter.php for demo
 
 
@@ -43,7 +43,7 @@ dst_cert_start = rsrc_loc - 1
 
 dst.OPTIONAL_HEADER.DATA_DIRECTORY[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_SECURITY']].Size = src_cert_size
 
-print dst_cert_start
+#print dst_cert_start
 
 newmalware = "newmalware.exe"	
 dst.write(dstfile) # commit
