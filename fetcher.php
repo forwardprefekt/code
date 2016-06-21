@@ -1,8 +1,8 @@
+<?php
 ## Set up proxy to listen on 9050, in this case, TOR is easiest most obvious
 ## This is a great way to bypass proxy restrictions, or anonymously snag files.
 ## Check out grifsec.com/fetcher.php for a demo
 
-<?php
 	if(isset($_GET['url'])) {
 
 
