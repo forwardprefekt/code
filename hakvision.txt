@@ -1,0 +1,74 @@
+# lets analyze camera firmware. hikvision/dahua/whatever notoriously vulnerable.... using latest release for supported hardware...
+
+# we just need a linux box and binwalk and unzip (im on debian)
+$ sudo apt-get install -y binwalk unzip lzop
+
+# snag the firmware, all are listed here
+# https://us.hikvision.com/en/support-resources/firmware
+# this is for DS-2CD2012WD-I
+
+$ wget https://us.hikvision.com/sites/default/files/firmware/ipc_2xx2_en_std_5.4.5_170123.zip
+$ unzip ipc_2xx2_en_std_5.4.5_170123.zip
+
+#this will give us a pdf and digicap.dav
+
+# binwalk will handle extraction for you, digicap.dav will be the actual firmware
+$ binwalk -e digicap.dav
+
+# this will extract to _digicap.dav.extracted
+# there are a bunch of files, for an easy first pass on this stuff, i usually just focus on disk images
+# since we are really looking for hardcoded passwords. these are loaded every time the device boots
+# so no real way to get around it if they are using underlying linux auth
+
+$ file _digicap.dav.extracted/*
+_digicap.dav.extracted/11F2777:      POSIX tar archive (GNU)
+_digicap.dav.extracted/4E67D0.xz:    XZ compressed data
+_digicap.dav.extracted/538D7F:       data
+_digicap.dav.extracted/538D7F.7z:    data
+<SNIP>
+_digicap.dav.extracted/initrd:       Linux rev 0.0 ext2 filesystem data, UUID=00000000-0000-0000-0000-000000000000
+_digicap.dav.extracted/it.tar.gz:    gzip compressed data, last modified: Mon Jan 23 12:17:40 2017, from Unix, original size 153600
+_digicap.dav.extracted/ja.tar.gz:    gzip compressed data, last modified: Mon Jan 23 12:17:40 2017, from Unix, original size 163840
+_digicap.dav.extracted/ko.tar.gz:    gzip compressed data, last modified: Mon Jan 23 12:17:40 2017, from Unix, original size 153600
+
+# lots of neat stuff, but for our purposes key in on the ext2 filesystem. its exactly what it says. we can just mount that to a dir
+$ mkdir /mnt/lamer
+$ mount _digicap.dav.extracted/initrd /mnt/lamer/
+$ ls -l /mnt/lamer/
+total 19
+drwxrwxr-x  2 root root 1024 Jan 13  2017 bin
+drwxrwxrwx  2 root root 1024 Jan 13  2017 config
+drwxrwxrwx  2 root root 1024 Jan 13  2017 dav
+drwxrwxrwx  2 root root 1024 Jan 13  2017 davinci
+drwxrwxrwx  2 root root 1024 Jan 13  2017 dev
+drwxrwxrwx  6 root root 1024 Jan 13  2017 etc
+drwxrwxrwx  2 root root 1024 Jan 13  2017 home
+<SNIP>
+
+$ cat /mnt/lamer/etc/passwd
+root:ToCOv8qxP13qs:0:0:root:/root/:/bin/psh
+
+# there is the password, install john and get crackin'
+$ sudo apt-get install -y john
+$ john --format:descrypt /mnt/lamer/etc/passwd
+Loaded 1 password hash (descrypt, traditional crypt(3) [DES 128/128 SSE2-16])
+Press 'q' or Ctrl-C to abort, almost any other key for status
+Warning: MaxLen = 13 is too large for the current hash type, reduced to 8
+0g 0:00:00:02 3/3 0g/s 1095Kp/s 1095Kc/s 1095KC/s cheakid..chearow
+0g 0:00:00:04 3/3 0g/s 1622Kp/s 1622Kc/s 1622KC/s mutac3..muel0l
+0g 0:00:00:05 3/3 0g/s 1806Kp/s 1806Kc/s 1806KC/s codasis..codad17
+0g 0:00:00:06 3/3 0g/s 1965Kp/s 1965Kc/s 1965KC/s jukatt..jukamp
+0g 0:00:00:07 3/3 0g/s 2081Kp/s 2081Kc/s 2081KC/s jeadidz..jeastrl
+0g 0:00:00:08 3/3 0g/s 2153Kp/s 2153Kc/s 2153KC/s lokeyor..lokeney
+0g 0:00:00:09 3/3 0g/s 2182Kp/s 2182Kc/s 2182KC/s b197cr..b19396
+0g 0:00:00:10 3/3 0g/s 2248Kp/s 2248Kc/s 2248KC/s dydgon3..1lam
+0g 0:00:00:13 3/3 0g/s 2361Kp/s 2361Kc/s 2361KC/s ads1948..ads1000
+0g 0:00:00:14 3/3 0g/s 2385Kp/s 2385Kc/s 2385KC/s ceelstr1..ceelow16
+0g 0:00:00:15 3/3 0g/s 2431Kp/s 2431Kc/s 2431KC/s kesui..ked3l
+0g 0:00:10:04 3/3 0g/s 3019Kp/s 3019Kc/s 3019KC/s trka21a..trka2ko
+hiklinux         (root)
+1g 0:01:40:17 3/3 0.000166g/s 3087Kp/s 3087Kc/s 3087KC/s hiklins3..hiklia15
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+
+# there you go
