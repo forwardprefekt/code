@@ -1,0 +1,7 @@
+# get all windows log types in a list
+
+ (get-winevent -listlog * -erroraction silentlycontinue).logname | ForEach-Object {
+    $x =  "[WinEventLog://{0}]" -f $_
+    add-content out.txt -value  $x
+    add-content out.txt -value  "disabled=0"
+    } 
